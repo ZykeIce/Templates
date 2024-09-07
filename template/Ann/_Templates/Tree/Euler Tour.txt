@@ -1,0 +1,12 @@
+vector<int> lt(n+1, 0), rt(n+1, 0);
+    int timer = 0;
+    auto dfs = [&](auto dfs, int u, int p) -> void{
+        timer++;
+        lt[u] = timer;
+        for(int v : adj[u]){
+            if(v == p) continue;
+            dfs(dfs, v, u);
+        }
+        rt[u] = timer;
+    };
+    dfs(dfs, 1, 0);

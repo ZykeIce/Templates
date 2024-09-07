@@ -1,0 +1,32 @@
+struct DSU{
+    int n;
+    vector<int> pa, sz;
+    DSU(int n) : n(n){
+        pa.resize(n+1);
+        sz.resize(n+1, 1);
+        for(int i = 0; i <= n; i++){
+            pa[i] = i;
+        }
+    };
+    int find(int x){
+        while(x != pa[x]){
+            x = pa[x] = pa[pa[x]];
+        }
+        return x;
+    }
+    bool same(int x, int y){
+        return find(x) == find(y);
+    }
+    bool merge(int x, int y){
+        x = find(x);
+        y = find(y);
+        if(x == y) return false;
+        if(sz[x] < sz[y]) swap(x, y);
+        pa[y] = x;
+        sz[x] += sz[y];
+        return true;
+    }
+    int size(int x){
+        return sz[find(x)];
+    }
+};

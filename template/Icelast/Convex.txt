@@ -1,0 +1,45 @@
+vector<point> convex(vector<point> a){
+    auto cmpx = [&](point a, point b) -> bool{
+        return a.x < b.x || (a.x == b.x && a.y < b.y);
+    };
+    auto cmprx = [&](point a, point b) -> bool{
+        return a.x > b.x || (a.x == b.x && a.y > b.y);
+    };
+    auto ts = [&](point a, point b, point c) -> int{
+        ll res = (a.y+b.y)*(a.x-b.x) + (b.y+c.y)*(b.x-c.x) + (c.y+a.y)*(c.x-a.x);
+        if(res > 0){return 1;}
+        if(res < 0){return -1;}
+        return 0;
+        //-1 is clockwise
+    };
+    vector<point> cvu;
+    sort(a.begin(), a.end(), cmpx);
+    for(point it : a){
+        if(cvu.size() < 2){
+            cvu.push_back(it);
+            continue;
+        }
+        while(cvu.size() >= 2 && ts(cvu[cvu.size()-2], cvu.back(), it) == 1){
+            cvu.pop_back();
+        }
+        cvu.push_back(it);
+    }
+    vector<point> cvd;
+    sort(a.begin(), a.end(), cmprx);
+    for(point it : a){
+        if(cvd.size() < 2){
+            cvd.push_back(it);
+            continue;
+        }
+        while(cvd.size() >= 2 && ts(cvd[cvd.size()-2], cvd.back(), it) == 1){
+            cvd.pop_back();
+        }
+        cvd.push_back(it);
+    }
+    cvu.pop_back();
+    cvd.pop_back();
+    vector<point> cv;
+    for(point it : cvu) cv.push_back(it);
+    for(point it : cvd) cv.push_back(it);
+    return cv;
+}

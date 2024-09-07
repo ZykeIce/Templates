@@ -1,0 +1,93 @@
+struct Tree{
+    int n, root;
+    vector<int> depth, head, sz, pa;
+    vector<int> f;
+    Tree(int n, int root, vector<vector<int>> &adj): n(n), root(root){
+        depth.resize(n+1, -1);
+        head.resize(n+1);
+        sz.resize(n+1, 0);
+        pa.resize(n+1, -1);
+        auto rootTree = [&](auto rootTree, int u, int p) -> void{
+            depth[u] = depth[p]+1;
+            pa[u] = p;
+            sz[u] = 1;
+            for(int v : adj[u]){
+                if(v == p) continue;
+                rootTree(rootTree, v, u);
+                sz[u] += sz[v];
+            }
+        };
+        rootTree(rootTree, root, 0);
+        auto decompose = [&](auto decompose, int u, int h) -> void{
+            head[u] = h;
+            int heavy = -1;
+            for(int v : adj[u]){
+                if(v == pa[u]) continue;
+                if(heavy == -1 || sz[heavy] < sz[v]) heavy = v;
+            }
+            if(heavy != -1) decompose(decompose, heavy, h);
+            for(int v : adj[u]){
+                if(v == pa[u] || v == heavy) continue;
+                decompose(decompose, v, v);
+            }
+        };
+        decompose(decompose, root, root);
+        f = [&]{
+            vector<array<int, 2>> first(n+1);
+            vector<array<int, 2>> second(n+1);
+            function<void(int, int)> dfs0 = [&](int u, int p) {
+                first[u] = second[u] = {0, -1};
+                for (int v : adj[u]) {
+                    if (v == p) {
+                        continue;
+                    }
+                    dfs0(v, u);
+                    auto fetch = first[v];
+                    fetch[0] += 1;
+                    fetch[1] = v;
+                    if (fetch > first[u]) {
+                        swap(fetch, first[u]);
+                    }
+                    if (fetch > second[u]) {
+                        swap(fetch, second[u]);
+                    }
+                }
+            };
+            dfs0(1, 0);
+
+            function<void(int, int)> dfs = [&](int u, int p) {
+                for (int v : adj[u]) {
+                    if (v == p) {
+                        continue;
+                    }
+                    auto fetch = first[u][1] == v ? second[u] : first[u];
+                    fetch[0] += 1;
+                    fetch[1] = u;
+                    if (fetch > first[v]) {
+                        swap(fetch, first[v]);
+                    }
+                    if (fetch > second[v]) {
+                        swap(fetch, second[v]);
+                    }
+                    dfs(v, u);
+                }
+            };
+            dfs(1, 0);
+            vector<int> f(n+1);
+            for (int u = 1; u <= n; u++) {
+                f[u] = first[u][0];
+            }
+            return f;
+        }();
+    };
+    int lca(int u, int v){
+        for(; head[u] != head[v]; v = pa[head[v]]){
+            if(depth[head[u]] > depth[head[v]]) swap(u, v);
+        }
+        if(depth[u] > depth[v]) swap(u, v);
+        return u;
+    }
+    int dist(int u, int v) {
+        return depth[u]+depth[v]-2*depth[lca(u, v)];
+    }
+};
