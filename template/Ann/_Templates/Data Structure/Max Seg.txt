@@ -1,15 +1,18 @@
 struct SegmentTree{
-    vector<ll> T;
+    struct Node{
+        ll mx = 0;
+    };
+    vector<Node> T;
     int n, N;
     SegmentTree(int n) : n(n){
         N = 1;
         while(N < n) N*=2;
-        T.resize(N*2+1, 0);
+        T.resize(N*2+1);
     };
     void upd(int i, ll x){
         auto upd = [&](auto upd, int node, int low, int high, int i, ll x) -> void{
             if(low == high){
-                T[node] = x;
+                T[node].mx = max(T[node].mx, x);
                 return;
             }
             int mid = (low+high)/2;
@@ -18,17 +21,17 @@ struct SegmentTree{
             }else{
                 upd(upd, node*2+1, mid+1, high, i, x);
             }
-            T[node] = T[node*2]+T[node*2+1];
+            T[node].mx = max(T[node*2].mx, T[node*2+1].mx);
         };
         upd(upd, 1, 1, N, i, x);
     }
-    ll sum(int l, int r){
-        auto sum = [&](auto sum, int node, int low, int high, int l, int r) -> ll{
+    ll get_max(int l, int r){
+        auto get_max = [&](auto get_max, int node, int low, int high, int l, int r) -> ll{
             if(low > r || l > high) return 0;
-            if(low >= l && r >= high) return T[node];
+            if(low >= l && r >= high) return T[node].mx;
             int mid = (low+high)/2;
-            return sum(sum, node*2, low, mid, l, r) + sum(sum, node*2+1, mid+1, high, l, r);
+            return max(get_max(get_max, node*2, low, mid, l, r), get_max(get_max, node*2+1, mid+1, high, l, r));
         };
-        return sum(sum, 1, 1, N, l, r);
+        return get_max(get_max, 1, 1, N, l, r);
     }
 };

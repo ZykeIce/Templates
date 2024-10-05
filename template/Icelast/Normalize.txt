@@ -1,0 +1,18 @@
+struct normalize{
+    vector<ll> poi, pot;
+    void add(ll x){
+        poi.push_back(x);
+    }
+    void start(){
+        sort(poi.begin(), poi.end());
+        pot.push_back(poi[0]);
+        for(int i = 1; i < (int)poi.size(); i++){
+            if(poi[i] != poi[i-1]){
+                pot.push_back(poi[i]);
+            }
+        }
+    }
+    int encode(ll x){
+        return lower_bound(pot.begin(), pot.end(), x) - pot.begin()+1;
+    }
+};

@@ -1,4 +1,4 @@
-ll fact[10000005];
+vector<ll> fact, invfact;
 ll binpow(ll a, ll b){
     ll res = 1;
     while(b > 0){
@@ -15,16 +15,23 @@ ll binpow(ll a, ll b){
 ll modinv(ll x){
     return binpow(x, mod-2);
 }
-void calcfact(){
+void calcfact(int n){
+    fact.resize(n+1, 0);
+    invfact.resize(n+1, 0);
+
     fact[0] = 1;
-    for(int i = 1; i <= 1e7; i++){
+    for(int i = 1; i <= n; i++){
         fact[i] = fact[i-1]*i;
         fact[i]%=mod;
+    }
+    invfact[n] = modinv(fact[n]);
+    for(int i = n-1; i >= 0; i--){
+        invfact[i] = invfact[i+1]*(i+1)%mod;
     }
 }
 ll nCk(ll n, ll k){
     if(k < 0 || k > n) return 0;
-    return fact[n]*binpow((fact[k]*fact[n-k])%mod, mod-2)%mod;
+    return fact[n]*(invfact[k]*invfact[n-k]%mod)%mod;
 }
 ll distributing_apples(ll n, ll m){ // number of people, apple
     return nCk(m+n-1, n-1);

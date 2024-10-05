@@ -1,0 +1,39 @@
+//Input planar graph as a n-sided polygon, vector (1-indexed) of non-intersect lines, return a as vertices for each region, adj is the tree
+void ConstructTreeFromPlanar(int n, vector<pair<int, int>> L, vector<vector<int>> &a, vector<vector<int>> &adj){
+    struct event{
+        int t, l, r, id;
+    };
+    L.push_back({1, n});
+    int m = L.size()-1;
+    vector<vector<event>> d(n+1);
+    for(int i = 1; i <= m; i++){
+        int l = L[i].first, r = L[i].second;
+        if(l > r) swap(l, r);
+        d[l].push_back({1, l, r, i});
+        d[r].push_back({-1, l, r, i});
+    }
+    stack<int> regions, vertices;
+    for(int i = 1; i <= n; i++){
+        sort(d[i].begin(), d[i].end(), [&](event a, event b){
+            return a.t < b.t || (a.t == b.t && ((a.t == 1 && a.r > b.r)||(a.t == -1 && a.l > b.l)));
+        });
+        vertices.push(i);
+        for(auto it : d[i]){
+            if(it.t == 1){
+                regions.push(it.id);
+            }else{
+                while(!vertices.empty() && vertices.top() >= it.l){
+                    int v = vertices.top();
+                    vertices.pop();
+                    a[it.id].push_back(v);
+                }
+                vertices.push(it.l);
+                vertices.push(i);
+                regions.pop();
+                if(regions.empty()) continue;
+                adj[it.id].push_back(regions.top());
+                adj[regions.top()].push_back(it.id);
+            }
+        }
+    }
+}

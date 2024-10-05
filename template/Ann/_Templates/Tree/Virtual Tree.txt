@@ -1,0 +1,105 @@
+struct VirtualTree{
+    int n, root;
+    vector<int> head, sz, pa;
+    vector<ll> depth;
+    vector<int> lt, rt;
+    VirtualTree(int n, int root, vector<vector<pair<int, ll>>> &adj): n(n), root(root){
+        depth.resize(n+1, 0);
+        head.resize(n+1);
+        sz.resize(n+1, 0);
+        pa.resize(n+1, -1);
+        lt.resize(n+1);
+        rt.resize(n+1);
+        int timer = 0;
+        auto rootTree = [&](auto rootTree, int u, int p) -> void{
+            pa[u] = p;
+            sz[u] = 1;
+            timer++;
+            lt[u] = timer;
+            for(auto it : adj[u]){
+                int v = it.first;
+                ll w = it.second;
+                if(v == p) continue;
+                depth[v] = depth[u] + w;
+                rootTree(rootTree, v, u);
+                sz[u] += sz[v];
+            }
+            rt[u] = timer;
+        };
+        rootTree(rootTree, root, 0);
+        auto decompose = [&](auto decompose, int u, int h) -> void{
+            head[u] = h;
+            int heavy = -1;
+            for(auto it : adj[u]){
+                int v = it.first;
+                ll w = it.second;
+                if(v == pa[u]) continue;
+                if(heavy == -1 || sz[heavy] < sz[v]) heavy = v;
+            }
+            if(heavy != -1) decompose(decompose, heavy, h);
+            for(auto it : adj[u]){
+                int v = it.first;
+                ll w = it.second;
+                if(v == pa[u] || v == heavy) continue;
+                decompose(decompose, v, v);
+            }
+        };
+        decompose(decompose, root, root);
+    };
+    int lca(int u, int v){
+        for(; head[u] != head[v]; v = pa[head[v]]){
+            if(depth[head[u]] > depth[head[v]]) swap(u, v);
+        }
+        if(depth[u] > depth[v]) swap(u, v);
+        return u;
+    }
+    ll dist(int u, int v) {
+        return depth[u]+depth[v]-2*depth[lca(u, v)];
+    }
+    bool check_anc(int u, int v){
+        return lt[u] <= lt[v] && lt[v] <= rt[u];
+    }
+    void query(vector<int> a, vector<vector<pair<int, ll>>> &VT, vector<int> &important){
+        int k = a.size()-1;
+        vector<int> t = a;
+        sort(t.begin()+1, t.end());
+        //add lca, sort them and unique
+        auto cmp = [&](int a, int b) -> bool{
+            return lt[a] < lt[b];
+        };
+        sort(a.begin()+1, a.end(), cmp);
+        for(int i = 2; i <= k; i++){
+            a.push_back(lca(a[i], a[i-1]));
+        }
+        sort(a.begin()+1, a.end(), cmp);
+        a.erase(unique(a.begin()+1, a.end()), a.end());
+        //construct tree
+        VT.resize(a.size());
+        stack<int> st;
+        for(int i = 1; i < (int)a.size(); i++){
+            while(!st.empty() && !check_anc(a[st.top()], a[i])){
+                st.pop();
+            }
+            if(!st.empty()){
+                ll w = abs(depth[a[i]]-depth[a[st.top()]]);
+                VT[st.top()].push_back({i, w});
+                VT[i].push_back({st.top(), w});
+            }
+            st.push(i);
+        }
+        //encode the important nodes
+        t.push_back(1e9);
+        auto ina = [&](int x) -> bool{
+            return t[lower_bound(t.begin()+1, t.end(), x) - t.begin()] == x;
+        };
+        for(int i = 1; i < (int)a.size(); i++){
+            if(ina(a[i])){
+                important.push_back(i);
+            }
+        }
+    }
+};
+//custom problem you need to solve
+void solvefor(vector<vector<pair<int, ll>>> &adj, vector<int> impo){
+
+}

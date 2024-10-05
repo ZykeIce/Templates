@@ -1,37 +1,39 @@
-struct CentroidTree {
-    vector<int> parent;
-
-    CentroidTree(const int &n, const vector<vector<int>> &adj) : parent(n) {
-        vector<bool> blocked(n, false);
-
-        vector<int> siz(n);
-        auto getSize = [&](auto self, int u, int p) -> void {
-            siz[u] = 1;
-            for (int v : adj[u]) {
-                if (v == p || blocked[v]) continue;
-                self(self, v, u);
-                siz[u] += siz[v];
+struct CentroidTree{
+    int n;
+    vector<int> pa;
+    CentroidTree(int n, vector<vector<int>> &adj) : n(n){
+        pa.resize(n+1, -1);
+        vector<bool> ban(n+1, false);
+        vector<int> sub(n+1);
+        int tree_size;
+        auto rt = [&](auto rt, int u, int p) -> void{
+            sub[u] = 1;
+            for(int v : adj[u]){
+                if(v == p || ban[v]) continue;
+                rt(rt, v, u);
+                sub[u]+=sub[v];
             }
         };
-
-        auto getCentroid = [&](auto self, int u, int p, int n) -> int {
-            for (int v : adj[u]) {
-                if (v == p || blocked[v]) continue;
-                if (siz[v] > n / 2) return self(self, v, u, n);
+        auto find = [&](auto find, int u, int p) -> int{
+            for(int v : adj[u]){
+                if(v == p || ban[v]) continue;
+                if(sub[v]*2 > tree_size){
+                    return find(find, v, u);
+                }
             }
             return u;
         };
-
-        auto build = [&](auto self, int u, int p) -> void {
-            getSize(getSize, u, -1);
-            u = getCentroid(getCentroid, u, -1, siz[u]);
-            blocked[u] = true;
-            parent[u] = p;
-            for (int v : adj[u]) {
-                if (blocked[v]) continue;
-                self(self, v, u);
+        auto build = [&](auto build, int u, int p) -> void{
+            rt(rt, u, u);
+            tree_size = sub[u];
+            int c = find(find, u, u);
+            ban[c] = true;
+            pa[c] = p;
+            for(int v : adj[c]){
+                if(ban[v]) continue;
+                build(build, v, c);
             }
         };
-        build(build, 0, -1);
-    }
+        build(build,  1, 0);
+    };
 };
