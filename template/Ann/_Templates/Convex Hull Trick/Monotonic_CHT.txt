@@ -1,0 +1,57 @@
+// Monotonic Convex Hull Trick (Jiangly style): O(n) when slopes and query-x are monotonic.
+// Template parameter: isMin = true for minimum queries, false for maximum.
+template <bool isMin>
+struct CHT {
+    vector<pair<ll,ll>> h; // {m, b}
+    int ptr = 0;
+
+    // compare two values based on isMin
+    static bool better(ll a, ll b) {
+        return isMin ? a <= b : a >= b;
+    }
+
+    // check whether line l2 is unnecessary between l1 and l3
+    bool bad(const pair<ll,ll>& l1, const pair<ll,ll>& l2, const pair<ll,ll>& l3) {
+        long double m1 = (long double)l1.first, b1 = (long double)l1.second;
+        long double m2 = (long double)l2.first, b2 = (long double)l2.second;
+        long double m3 = (long double)l3.first, b3 = (long double)l3.second;
+        long double x13 = (b3 - b1) / (m1 - m3);
+        long double x12 = (b2 - b1) / (m1 - m2);
+        // for min, we want x13 <= x12 to drop l2; for max, same condition holds
+        return x13 <= x12;
+    }
+
+    // add line y = m*x + b; slopes must be monotonic (decreasing for min, increasing for max)
+    void add(ll m, ll b) {
+        if (!h.empty()) {
+            // Optionally assert monotonic slope order:
+            // if (isMin) assert(m < h.back().first);
+            // else assert(m > h.back().first);
+        }
+        h.emplace_back(m, b);
+        int sz = h.size();
+        while (sz >= 3 && bad(h[sz-3], h[sz-2], h[sz-1])) {
+            h.erase(h.end()-2);
+            sz--;
+        }
+        if (ptr >= sz) ptr = sz - 1;
+    }
+
+    // query at x; x must be monotonic (increasing for min, increasing for max)
+    ll query(ll x) {
+        int sz = h.size();
+        if (ptr >= sz) ptr = sz - 1;
+        // move ptr while next line is better
+        while (ptr + 1 < sz) {
+            ll cur = h[ptr].first * x + h[ptr].second;
+            ll nxt = h[ptr+1].first * x + h[ptr+1].second;
+            if (better(nxt, cur)) ptr++;
+            else break;
+        }
+        return h[ptr].first * x + h[ptr].second;
+    }
+};
+
+// Clear aliases to choose query type
+using CHTMin = CHT<true>;
+using CHTMax = CHT<false>;

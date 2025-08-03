@@ -1,0 +1,132 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+template<class DS, class E, class Q, class R> // DS supports add(E) -> void, query(Q) -> R, rollback() -> void
+struct OfflineDynamic {
+    int T;
+    vector<vector<E>> seg;
+
+    OfflineDynamic(int T) : T(T), seg(4 << __lg(T)) {}
+
+    void add(int ql, int qr, E e) { // O(logT)
+        auto dfs = [&](auto self, int p, int l, int r) -> void {
+            if (r <= ql || qr <= l) return;
+            if (ql <= l && r <= qr) {
+                seg[p].push_back(e);
+                return;
+            }
+            int m = (l + r) >> 1;
+            self(self, 2 * p, l, m);
+            self(self, 2 * p + 1, m, r);
+        };
+        dfs(dfs, 1, 0, T);
+    }
+
+    vector<R> work(DS ds, vector<Q> queries) { // O(T) * T(query) + O(n) * (T(add) + T(rollback))
+        vector<R> res(T);
+        auto dfs = [&](auto self, int p, int l, int r) -> void {
+            for (const E &e : seg[p]) {
+                ds.add(e);
+            }
+            if (l + 1 == r) {
+                res[l] = ds.query(queries[l]);
+            } else {
+                int m = (l + r) >> 1;
+                self(self, 2 * p, l, m);
+                self(self, 2 * p + 1, m, r);
+            }
+            for (int ite = seg[p].size(); ite >= 1; ite--) {
+                ds.rollback();
+            }
+        };
+        dfs(dfs, 1, 0, T);
+        return res;
+    }
+};
+
+struct DSU {
+    int cnt;
+    vector<int> f;
+    vector<int> siz;
+    vector<vector<pair<int*, int>>> stacks;
+
+    DSU(int n) : cnt(n), f(n), siz(n, 1) { iota(f.begin(), f.end(), 0); }
+
+    int leader(int u) {
+        while (f[u] != u) u = f[u];
+        return u;
+    }
+
+    bool add(array<int, 2> edge) {
+        auto [u, v] = edge;
+        stacks.emplace_back();
+        u = leader(u);
+        v = leader(v);
+        if (u == v) return false;
+        if (siz[u] < siz[v]) swap(u, v);
+        stacks.back().push_back({ &siz[u], siz[u] });
+        stacks.back().push_back({ &f[v], f[v] });
+        stacks.back().push_back({ &cnt, cnt });
+        siz[u] += siz[v];
+        f[v] = u;
+        cnt--;
+        return true;
+    }
+
+    int query(int goat = 0) {
+        return cnt;
+    }
+
+    void rollback() {
+        while (!stacks.back().empty()) {
+            *(stacks.back().back().first) = stacks.back().back().second;
+            stacks.back().pop_back();
+        }
+        stacks.pop_back();
+    }
+};
+
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m, T;
+    cin >> n >> m >> T;
+    T++;
+    OfflineDynamic<DSU, array<int, 2>, int, int> od(T);
+
+    map<array<int, 2>, int> mp;
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+        u--;
+        v--;
+        if (u > v) swap(u, v);
+        mp[{u, v}] = 0;
+    }
+
+    for (int t = 1; t < T; t++) {
+        int type, u, v;
+        cin >> type >> u >> v;
+        u--; v--;
+        if (u > v) swap(u, v);
+        if (type == 1) {
+            mp[{u, v}] = t;
+        } else {
+            od.add(mp[{u, v}], t, {u, v});
+            mp.erase({u, v});
+        }
+    }
+
+    for (auto [uv, t] : mp) {
+        auto [u, v] = uv;
+        od.add(t, T, {u, v});
+    }
+
+    vector<int> res = od.work(DSU(n), vector<int>(T, 0));
+    for (int x : res) {
+        cout << x << ' ';
+    }
+    cout << '\n';
+}

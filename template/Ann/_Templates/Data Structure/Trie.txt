@@ -1,0 +1,84 @@
+//sum of first k element, with xor apply to the whole array
+struct Trie{
+    struct Node{
+        int cnt = 0, exist = 0;
+        int sum0[17] = {};
+        int sum1[17] = {};
+        int c[2] = {0, 0};
+    };
+    int B;
+    vector<Node> T;
+    Trie(int B) : B(B){
+        T.push_back(Node());
+    };
+    void add(int x){
+        int d = 1;
+        if(x < 0){
+            d = -1;
+            x = -x;
+        }
+        int u = 0;
+        for(int i = B; i >= 0; i--){
+            int bit = (1&(x>>i));
+            if (!T[u].c[bit]) {
+                T[u].c[bit] = T.size();
+                T.push_back(Node());
+            }
+            u = T[u].c[bit];
+            T[u].cnt += d;
+            for(int i = B; i >= 0; i--){
+                if(1&(x>>i)){
+                    T[u].sum1[i]+=d;
+                }else{
+                    T[u].sum0[i]+=d;
+                }
+            }
+        }
+        T[u].exist+=d;
+    }
+    int find(int x){
+        int u = 0;
+        for(int i = B; i >= 0; i--){
+            int bit = (1&(x>>i));
+            if(!T[u].c[bit]){
+                return 0;
+            }
+            u = T[u].c[bit];
+        }
+        if(T[u].exist) return u;
+        return 0;
+    }
+    ll walk(int k, int xr){
+        int node = 0;
+        int cur = 0;
+        int num = 0;
+        ll res = 0;
+        for(int i = B; i >= 0; i--){
+            int bit = (1&(xr>>i));
+            num *= 2;
+            num += cur;
+            int first = 0, second = 1;
+            if(bit) swap(first, second);
+            int f = T[node].c[first], s = T[node].c[second];
+            if(T[f].cnt >= k){
+                cur = first;
+                node = f;
+            }else{
+                cur = second;
+                k -= T[f].cnt;
+                for(int i = B; i >= 0; i--){
+                    if(1&(xr>>i)){
+                        res += (1LL<<i)*T[f].sum0[i];
+                    }else{
+                        res += (1LL<<i)*T[f].sum1[i];
+                    }
+                }
+                node = s;
+            }
+        }
+        num*=2;
+        num += cur;
+        res += (ll)(num^xr)*k;
+        return res;
+    }
+};

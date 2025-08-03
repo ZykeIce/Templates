@@ -17,7 +17,7 @@ struct LiChao {
         sort(dom.begin(), dom.end());
         dom.resize(unique(dom.begin(), dom.end()) - dom.begin());
         C = dom.size();
-        first.resize(4 * C, make_pair(0, INF));
+        first.resize(4 * C, {0, INF});
         label.resize(4 * C, -1);
     }
 

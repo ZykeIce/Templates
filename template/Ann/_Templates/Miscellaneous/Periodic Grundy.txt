@@ -1,0 +1,27 @@
+struct SG {
+    const vector<int>& g;
+    int T, P;
+    // ctor: g_ = precomputed grundy[0..n-1]
+    // L: suffix length to match (default n/2)
+    // Pmax: max period to try (default 500)
+    SG(const vector<int>& g_, int L = -1, int Pmax = 500)
+      : g(g_)
+    {
+        int n = g.size();
+        if (L < 0) L = n / 2;
+        T = n; P = 1;
+        for (int p = 1; p <= Pmax; p++) {
+            bool ok = true;
+            for (int i = n - L; i + p < n; i++) {
+                if (g[i] != g[i + p]) { ok = false; break; }
+            }
+            if (ok) { T = n - L; P = p; break; }
+        }
+        // if no period found, T=n, P=1 ⇒ SG(x)=g[x] for x<n, undefined for x>=n
+    }
+    inline int operator()(ll x) const {
+        return x < T
+             ? g[x]
+             : g[T + int((x - T) % P)];
+    }
+};

@@ -1,0 +1,18 @@
+struct IPquery{
+    mapll, Data mp;
+    void insert(ll a, Data x){
+        auto it = mp.upper_bound(a);
+        if(it != mp.end() && it!=mp.begin() && prev(it)-second  x){
+            return;
+        }
+        it = mp.insert(it, {a, x});
+        it-second = x;
+        while(next(it) != mp.end() && next(it)-second  x){
+            mp.erase(next(it));
+        }
+    }
+    Data query(ll a){
+        auto it = mp.upper_bound(a);
+        return prev(it)-second;
+    }
+};

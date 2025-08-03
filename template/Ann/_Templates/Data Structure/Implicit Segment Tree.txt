@@ -1,0 +1,113 @@
+struct ImplicitSegmentTree{
+    struct Node{
+        ll sum = 0, s = -1;
+        int ln = 0, rn = 0;
+    };
+    ll n, N;
+    vector<Node> T;
+    int cnt;
+    ImplicitSegmentTree(ll n): n(n){
+        N = n;
+        T.push_back(Node());
+        T.push_back(Node());
+        cnt = 1;
+    };
+    int new_node(){
+        T.push_back(Node());
+        cnt++;
+        return cnt;
+    }
+    void down(int node, ll low, ll high){
+        if(low < high){
+            if(T[node].ln == 0){
+                int x = new_node();
+                T[node].ln = x;
+            }
+            if(T[node].s != -1)
+                T[T[node].ln].s = T[node].s;
+            if(T[node].rn == 0){
+                int x = new_node();
+                T[node].rn = x;
+            }
+            if(T[node].s != -1)
+                T[T[node].rn].s = T[node].s;
+        }
+        ll len = high-low+1;
+        if(T[node].s != -1){
+            T[node].sum = T[node].s*len;
+        }
+        T[node].s = -1;
+    }
+    void apply(ll i, int x){
+        auto apply = [&](auto apply, int node, ll low, ll high, ll i, int x) -> void{
+            down(node, low, high);
+            if(low == high){
+                T[node].s = x;
+                down(node, low, high);
+                return;
+            }
+            ll mid = (low+high)/2;
+            if(i <= mid){
+                if(T[node].ln == 0){
+                    int x = new_node();
+                    T[node].ln = x;
+                }
+                apply(apply, T[node].ln, low, mid, i, x);
+            }else{
+                if(T[node].rn == 0){
+                    int x = new_node();
+                    T[node].rn = x;
+                }
+                apply(apply, T[node].rn, mid+1, high, i, x);
+            }
+            T[node].sum = T[T[node].ln].sum + T[T[node].rn].sum;
+        };
+        apply(apply, 1, 1, N, i, x);
+    }
+    void rangeApply(ll l, ll r, int x){
+        auto rangeApply = [&](auto self, int node, ll low, ll high, ll l, ll r, int x) -> void{
+            down(node, low, high);
+            if(low > r || l > high) return;
+            if(low >= l && r >= high){
+                T[node].s = x;
+                down(node, low, high);
+                return;
+            }
+            ll mid = (low+high)/2;
+            if(T[node].ln == 0){
+                int x = new_node();
+                T[node].ln = x;
+            }
+            self(self, T[node].ln, low, mid, l, r, x);
+            if(T[node].rn == 0){
+                int x = new_node();
+                T[node].rn = x;
+            }
+            self(self, T[node].rn, mid+1, high, l, r, x);
+            T[node].sum = T[T[node].ln].sum + T[T[node].rn].sum;
+        };
+        rangeApply(rangeApply, 1, 1, N, l, r, x);
+    }
+    ll get(ll l, ll r){
+       auto get = [&](auto self, int node, ll low, ll high, ll l, ll r) -> ll{
+            down(node, low, high);
+            if(low > r || l > high) return 0;
+            if(low >= l && r >= high){
+                return T[node].sum;
+            }
+            ll mid = (low+high)/2;
+            if(T[node].ln == 0){
+                int x = new_node();
+                T[node].ln = x;
+            }
+            if(T[node].rn == 0){
+                int x = new_node();
+                T[node].rn = x;
+            }
+            ll res = self(self, T[node].ln, low, mid, l, r) + self(self, T[node].rn, mid+1, high, l, r);
+            T[node].sum = T[T[node].ln].sum + T[T[node].rn].sum;
+            return res;
+        };
+        return get(get, 1, 1, N, l, r);
+    }
+};
