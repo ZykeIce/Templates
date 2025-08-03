@@ -1,0 +1,56 @@
+struct Tree{
+    int n, root;
+    vector<int> depth, head, sz, pa;
+    vector<ll> depthw;
+    vector<int> f;
+    Tree(int n, int root, vector<vector<pair<ll, ll>>> &adj): n(n), root(root){
+        depth.resize(n+1, -1);
+        depthw.resize(n+1, 0);
+        head.resize(n+1);
+        sz.resize(n+1, 0);
+        pa.resize(n+1, -1);
+        auto rootTree = [&](auto rootTree, int u, int p) -> void{
+            depth[u] = depth[p]+1;
+            pa[u] = p;
+            sz[u] = 1;
+            for(auto it : adj[u]){
+                int v = it.first;
+                ll w = it.second;
+                if(v == p) continue;
+                depthw[v] = depthw[u]+w;
+                rootTree(rootTree, v, u);
+                sz[u] += sz[v];
+            }
+        };
+        rootTree(rootTree, root, 0);
+        auto decompose = [&](auto decompose, int u, int h) -> void{
+            head[u] = h;
+            int heavy = -1;
+            for(auto it : adj[u]){
+                int v = it.first;
+                if(v == pa[u]) continue;
+                if(heavy == -1 || sz[heavy] < sz[v]) heavy = v;
+            }
+            if(heavy != -1) decompose(decompose, heavy, h);
+            for(auto it : adj[u]){
+                int v = it.first;
+                if(v == pa[u] || v == heavy) continue;
+                decompose(decompose, v, v);
+            }
+        };
+        decompose(decompose, root, root);
+    };
+    int lca(int u, int v){
+        for(; head[u] != head[v]; v = pa[head[v]]){
+            if(depth[head[u]] > depth[head[v]]) swap(u, v);
+        }
+        if(depth[u] > depth[v]) swap(u, v);
+        return u;
+    }
+    int dist(int u, int v) {
+        return depth[u]+depth[v]-2*depth[lca(u, v)];
+    }
+    ll distw(int u, int v){
+        return depthw[u]+depthw[v]-2*depthw[lca(u, v)];
+    }
+};
