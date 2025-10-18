@@ -1,0 +1,98 @@
+struct AntSugar {
+    struct Node {
+        long long sugar = 0, lazy_sugar = 0;
+        long long mn[2][2] = { { 0, 0 }, { 0, 0 } };
+        void merge(Node a, Node b) {
+            mn[0][0] = mn[0][1] = mn[1][0] = mn[1][1] = INF;
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    mn[i][j] = min(mn[i][j], a.mn[i][0] + b.mn[0][j]);
+                    mn[i][j] = min(mn[i][j], a.mn[i][0] + b.mn[1][j]);
+                    mn[i][j] = min(mn[i][j], a.mn[i][1] + b.mn[0][j]);
+                    mn[i][j] = min(mn[i][j], a.mn[i][1] + b.mn[1][j] - sugar);
+                    mn[i][0] = min(mn[i][0], a.mn[i][j]);
+                    mn[0][j] = min(mn[0][j], b.mn[i][j]);
+                }
+            }
+        }
+    };
+
+    vector<int> xs;
+    int radius;
+    int C;
+    vector<Node> nodes;
+    long long total = 0;
+
+    AntSugar(const vector<int> &ant_positions, const int &radius) : radius(radius) {
+        xs = ant_positions;
+        sort(xs.begin(), xs.end());
+        xs.resize(unique(xs.begin(), xs.end()) - xs.begin());
+        C = xs.size();
+        nodes.resize(4 * C);
+    }
+
+    void apply(int idx, long long delta_sugar) {
+        nodes[idx].sugar += delta_sugar;
+        nodes[idx].lazy_sugar += delta_sugar;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                nodes[idx].mn[i][j] += delta_sugar;
+            }
+        }
+    }
+
+    void down(int idx) {
+        if (nodes[idx].lazy_sugar == 0) return;
+        apply(2 * idx + 1, nodes[idx].lazy_sugar);
+        apply(2 * idx + 2, nodes[idx].lazy_sugar);
+        nodes[idx].lazy_sugar = 0;
+    }
+
+    void addAnt(int x, int delta) {
+        total += delta;
+        x = lower_bound(xs.begin(), xs.end(), x) - xs.begin();
+        auto dfs = [&](auto self, int idx, int l, int r) -> void {
+            if (l + 1 == r) {
+                for (int i = 0; i < 2; i++) {
+                    for (int j = 0; j < 2; j++) {
+                        nodes[idx].mn[i][j] -= delta;
+                    }
+                }
+            } else {
+                down(idx);
+                int m = (l + r) >> 1;
+                if (x < m) self(self, 2 * idx + 1, l, m);
+                else self(self, 2 * idx + 2, m, r);
+                nodes[idx].merge(nodes[2 * idx + 1], nodes[2 * idx + 2]);
+            }
+        };
+        dfs(dfs, 0, 0, C);
+    }
+
+    void addSugar(int x, int delta_sugar) {
+        int ql = lower_bound(xs.begin(), xs.end(), x - radius) - xs.begin();
+        int qr = lower_bound(xs.begin(), xs.end(), x + radius + 1) - xs.begin();
+        if (ql == qr) return;
+        auto dfs = [&](auto self, int idx, int l, int r) -> void {
+            if (r <= ql || qr <= l) return;
+            if (ql <= l && r <= qr) return apply(idx, delta_sugar);
+            down(idx);
+            int m = (l + r) >> 1;
+            if (ql <= m - 1 && m + 1 <= qr) nodes[idx].sugar += delta_sugar;
+            self(self, 2 * idx + 1, l, m);
+            self(self, 2 * idx + 2, m, r);
+            nodes[idx].merge(nodes[2 * idx + 1], nodes[2 * idx + 2]);
+        };
+        dfs(dfs, 0, 0, C);
+    }
+
+    long long getMaxMatching() {
+        long long res = INF;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                res = min(res, nodes[0].mn[i][j]);
+            }
+        }
+        return total + min(0LL, res);
+    }
+};
